@@ -1,4 +1,4 @@
-import { getTransformedAABB, aabbIntersection } from "./common/engine/core/SceneUtils.js";
+import { getTransformedAABB, aabbIntersection } from "./engine/core/SceneUtils.js";
 
 export class Physics {
 

@@ -1,19 +1,28 @@
-import { ResizeSystem } from "./common/engine/systems/ResizeSystem.js";
-import { UpdateSystem } from "./common/engine/systems/UpdateSystem.js";
-import { Camera, Model, Node, Transform } from "./common/engine/core.js";
-import { GLTFLoader } from "./common/engine/loaders/GLTFLoader.js";
-import { Light } from "./common/engine/core/Light.js";
-import { Renderer } from "./common/engine/renderers/Renderer.js";
-import { OrbitController } from "./common/engine/controllers/OrbitController.js";
-import { RotateAnimator } from "./common/engine/animators/RotateAnimator.js";
-import { getGlobalModelMatrix } from "./common/engine/core/SceneUtils.js";
-import { LinearAnimator } from "./common/engine/animators/LinearAnimator.js";
-import { FirstPersonController }from "./common/engine/controllers/FirstPersonController.js";
-import { UnlitRenderer } from './common/engine/renderers/UnlitRenderer.js';
-import { Physics } from "./Physics.js";
-import { calculateAxisAlignedBoundingBox, mergeAxisAlignedBoundingBoxes } from '../../../common/engine/core/MeshUtils.js';
-import { obnasanjeCamera, obnasanjeTla, obnasanjeGumb, obnasanjeKocka, obnasanjeStena, obnasanjeVrata } from "./Obnasanje.js";
-import { Binary } from "./Binary.js";
+import { ResizeSystem } from 'engine/systems/ResizeSystem.js';
+import { UpdateSystem } from 'engine/systems/UpdateSystem.js';
+
+import { GLTFLoader } from 'engine/loaders/GLTFLoader.js';
+import { Binary } from './Binary.js';
+import { Physics } from './Physics.js';
+
+import { OrbitController } from 'engine/controllers/OrbitController.js';
+import { RotateAnimator } from 'engine/animators/RotateAnimator.js';
+import { LinearAnimator } from 'engine/animators/LinearAnimator.js';
+import { calculateAxisAlignedBoundingBox, mergeAxisAlignedBoundingBoxes } from './engine/core/MeshUtils.js';
+import { FirstPersonController } from 'engine/controllers/FirstPersonController.js';
+import { obnasanjeCamera, obnasanjeKocka, obnasanjeGumb, obnasanjeStena, obnasanjeTla, obnasanjeVrata } from './Obnasanje.js';
+import { UnlitRenderer } from './engine/renderers/UnlitRenderer.js';
+
+import {
+    Camera,
+    Model,
+    Node,
+    Transform,
+} from 'engine/core.js';
+
+import { Renderer } from './Renderer.js';
+import { Light } from './Light.js';
+
 async function init()
 {
     await initComponents();
@@ -40,9 +49,6 @@ function initComponents()
     floorBin.velocity = [0,0,0];
     floorBin.addComponent(new Physics(scene, floorBin));
     floorBin.action = obnasanjeTla;
-    
-    
-    //Init stene
     let stena01 = initStena('stena01');
     let stena02 = initStena('stena02');
     let stena03 = initStena('stena03');
@@ -240,27 +246,22 @@ function bind(a = [], b = [])
 var dotik = false;
 var koga_premaknem = null;
 
-function update(t, dt)
-{
+function update(time, dt) {
     scene.traverse(node => {
-        for (const component of node.components)
-        {
-            component.update?.(t, dt);
+        for (const component of node.components) {
+            component.update?.(time, dt);
         }
-    })
-    //[dotik, koga_premaknem] = physics.updateD(dt);
-  
+    });
     if(koga_premaknem != null){
         bin.destroyPlatform(koga_premaknem);
     }
 }
 
-function render()
-{
+function render() {
     renderer.render(scene, camera);
 }
-function resize({ displaySize: { width, height }})
-{
+
+function resize({ displaySize: { width, height }}) {
     camera.getComponentOfType(Camera).aspect = width / height;
 }
 

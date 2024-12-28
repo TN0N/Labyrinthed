@@ -1,8 +1,8 @@
-import { vec3 } from "./lib/gl-matrix-module.js";
-import { Transform } from "./common/engine/core.js";
-import { getTransformedAABB } from "./common/engine/core/SceneUtils.js";
-import { LinearAnimator } from "./common/engine/animators/LinearAnimator.js";
-import { FirstPersonController } from "./common/engine/controllers/FirstPersonController.js";
+import { quat, vec3, vec4, mat3, mat4 } from 'glm';
+import { Transform } from "./engine/core.js";
+import { getTransformedAABB } from "./engine/core/SceneUtils.js";
+import { LinearAnimator } from "./engine/animators/LinearAnimator.js";
+import { FirstPersonController } from "./engine/controllers/FirstPersonController.js";
 let bin;
 function grounded(a, b)
 {
@@ -89,7 +89,7 @@ export function obnasanjeGumb(a, b, c, bin)
         a.collidingObjects.splice(a.collidingObjects.indexOf(b), 1);
         for (var i in a.bindings)
             openDoor(a.bindings[i]);
-
+        
     }
 }
 export function obnasanjeStena(a, b, c)
