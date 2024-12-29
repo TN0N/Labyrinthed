@@ -252,23 +252,35 @@ function update(time, dt) {
             component.update?.(time, dt);
         }
     });
+    //const cameraPosition = camera.getComponentOfType(Transform).translation;
+    //console.log("Player position:", cameraPosition);
     if(koga_premaknem != null){
         bin.destroyPlatform(koga_premaknem);
     }
-}
-
-function render() {
-    renderer.render(scene, camera);
-}
-
-function resize({ displaySize: { width, height }}) {
-    camera.getComponentOfType(Camera).aspect = width / height;
 }
 
 const canvas = document.querySelector("canvas");
 //Init renderer
 const renderer = new UnlitRenderer(canvas);
 await renderer.initialize();
+
+const light = {
+    position: [15, 1, 15],  // Example position
+    ambient: [0.1, 0.1, 0.1],  // Ambient color
+    diffuse: [1, 1, 1],  // Diffuse color
+    specular: [1, 1, 1]  // Specular color
+};
+
+
+function render() {
+    renderer.render(scene, camera, light);
+}
+
+function resize({ displaySize: { width, height }}) {
+    camera.getComponentOfType(Camera).aspect = width / height;
+}
+
+
 
 //Init scene
 const gltfLoader = new GLTFLoader();

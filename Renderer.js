@@ -152,15 +152,22 @@ export class Renderer extends BaseRenderer {
         if (this.gpuObjects.has(material)) {
             return this.gpuObjects.get(material);
         }
-
+    
         const baseTexture = this.prepareImage(material.baseTexture.image).gpuTexture;
         const baseSampler = this.prepareSampler(material.baseTexture.sampler).gpuSampler;
-
+    
         const materialUniformBuffer = this.device.createBuffer({
-            size: 16,
+            size: 32, // 16 for baseFactor + 16 for shininess and padding
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-
+    
+        // Write baseFactor
+        this.device.queue.writeBuffer(materialUniformBuffer, 0, new Float32Array(material.baseFactor));
+    
+        // Write shininess
+        const shininessBuffer = new Float32Array([material.shininess]);
+        this.device.queue.writeBuffer(materialUniformBuffer, 16, shininessBuffer);
+    
         const materialBindGroup = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(2),
             entries: [
@@ -169,7 +176,7 @@ export class Renderer extends BaseRenderer {
                 { binding: 2, resource: baseSampler },
             ],
         });
-
+    
         const gpuObjects = { materialUniformBuffer, materialBindGroup };
         this.gpuObjects.set(material, gpuObjects);
         return gpuObjects;
@@ -211,6 +218,7 @@ export class Renderer extends BaseRenderer {
         const lightComponent = light.getComponentOfType(Light);
         const lightMatrix = getGlobalModelMatrix(light);
         const lightPosition = mat4.getTranslation(vec3.create(), lightMatrix);
+        console.log("Light Position:", lightPosition);
         const { lightUniformBuffer, lightBindGroup } = this.prepareLight(lightComponent);
         this.device.queue.writeBuffer(lightUniformBuffer, 0, lightPosition);
         this.device.queue.writeBuffer(lightUniformBuffer, 12,
@@ -229,8 +237,9 @@ export class Renderer extends BaseRenderer {
 
         const { modelUniformBuffer, modelBindGroup } = this.prepareNode(node);
         const normalMatrix = mat4.normalFromMat4(mat4.create(), modelMatrix);
-        this.device.queue.writeBuffer(modelUniformBuffer, 0, modelMatrix);
-        this.device.queue.writeBuffer(modelUniformBuffer, 64, normalMatrix);
+        this.device.queue.writeBuffer(cameraUniformBuffer, 0, viewMatrix);
+        this.device.queue.writeBuffer(cameraUniformBuffer, 64, projectionMatrix);
+        this.device.queue.writeBuffer(cameraUniformBuffer, 128, new Float32Array(camera.position));
         this.renderPass.setBindGroup(1, modelBindGroup);
 
         for (const model of getModels(node)) {

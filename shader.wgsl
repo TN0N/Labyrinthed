@@ -1,20 +1,15 @@
 struct VertexInput {
     @location(0) position: vec3f,
     @location(1) texcoords: vec2f,
-    @location(2) normal: vec3f,
 }
 
 struct VertexOutput {
-    @builtin(position) clipPosition: vec4f,
-    @location(0) position: vec3f,
+    @builtin(position) position: vec4f,
     @location(1) texcoords: vec2f,
-    @location(2) normal: vec3f,
 }
 
 struct FragmentInput {
-    @location(0) position: vec3f,
     @location(1) texcoords: vec2f,
-    @location(2) normal: vec3f,
 }
 
 struct FragmentOutput {
@@ -35,27 +30,18 @@ struct MaterialUniforms {
     baseFactor: vec4f,
 }
 
-struct LightUniforms {
-    position: vec3f,
-    ambient: f32,
-}
-
 @group(0) @binding(0) var<uniform> camera: CameraUniforms;
 @group(1) @binding(0) var<uniform> model: ModelUniforms;
 @group(2) @binding(0) var<uniform> material: MaterialUniforms;
 @group(2) @binding(1) var baseTexture: texture_2d<f32>;
 @group(2) @binding(2) var baseSampler: sampler;
-@group(3) @binding(0) var<uniform> light: LightUniforms;
 
 @vertex
 fn vertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
 
-    output.clipPosition = camera.projectionMatrix * camera.viewMatrix * model.modelMatrix * vec4(input.position, 1);
-
-    output.position = (model.modelMatrix * vec4(input.position, 1)).xyz;
+    output.position = camera.projectionMatrix * camera.viewMatrix * model.modelMatrix * vec4(input.position, 1);
     output.texcoords = input.texcoords;
-    output.normal = model.normalMatrix * input.normal;
 
     return output;
 }
@@ -64,15 +50,28 @@ fn vertex(input: VertexInput) -> VertexOutput {
 fn fragment(input: FragmentInput) -> FragmentOutput {
     var output: FragmentOutput;
 
-    let N = normalize(input.normal);
-    let L = normalize(light.position - input.position);
+    // Diffuse shading (Lambertian reflection)
+    let lightPosition = vec3(1.0, 2.0, 3.0); // Example light position
+    let cameraPosition = vec3(0.0, 0.0, 5.0); // Example camera position
+    let lightColor = vec3(1.0, 1.0, 1.0); // White light color
+    let lightIntensity = 1.0; // Light intensity
 
-    let lambert = max(dot(N, L), 0);
+    let texcoordsWithZ = vec3(input.texcoords, 0.0); // If you need to use texcoords with a z-value
+    let lightDirection = normalize(lightPosition - texcoordsWithZ); // Light direction
+    let viewDirection = normalize(cameraPosition - texcoordsWithZ); // View direction
 
-    let materialColor = textureSample(baseTexture, baseSampler, input.texcoords) * material.baseFactor;
-    let lambertFactor = vec4(vec3(lambert), 1);
-    let ambientFactor = vec4(vec3(light.ambient), 1);
-    output.color = materialColor * (lambertFactor + ambientFactor);
+    // Diffuse shading (Lambertian reflection)
+    let diffuse = max(dot(normalize(texcoordsWithZ), lightDirection), 0.0);
+
+    // Blinn-Phong specular reflection
+    let halfVector = normalize(lightDirection + viewDirection);
+    let specular = pow(max(dot(normalize(texcoordsWithZ), halfVector), 0.0), 16.0); // Shininess factor
+
+    // Combine the diffuse and specular lighting components
+    let color = (lightColor * diffuse * lightIntensity) + (lightColor * specular * lightIntensity);
+
+    // Final color output
+    output.color = vec4(color, 1.0);
 
     return output;
 }
