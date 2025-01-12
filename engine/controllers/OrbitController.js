@@ -9,7 +9,7 @@ export class OrbitController {
         distance = 2,
         moveSensitivity = 0.003,
         zoomSensitivity = 0.002,
-    } = {}) {
+        } = {}) {
         this.node = node;
         this.domElement = domElement;
 

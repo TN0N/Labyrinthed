@@ -1,17 +1,22 @@
 import { ResizeSystem } from 'engine/systems/ResizeSystem.js';
 import { UpdateSystem } from 'engine/systems/UpdateSystem.js';
-
+import { getTransformedAABB, aabbIntersection } from "./engine/core/SceneUtils.js";
 import { GLTFLoader } from 'engine/loaders/GLTFLoader.js';
 import { Binary } from './Binary.js';
 import { Physics } from './Physics.js';
-
+import { getGlobalModelMatrix, getLocalModelMatrix } from './engine/core/SceneUtils.js';
 import { OrbitController } from 'engine/controllers/OrbitController.js';
 import { RotateAnimator } from 'engine/animators/RotateAnimator.js';
 import { LinearAnimator } from 'engine/animators/LinearAnimator.js';
 import { calculateAxisAlignedBoundingBox, mergeAxisAlignedBoundingBoxes } from './engine/core/MeshUtils.js';
-import { FirstPersonController } from 'engine/controllers/FirstPersonController.js';
-import { obnasanjeCamera, obnasanjeKocka, obnasanjeGumb, obnasanjeStena, obnasanjeTla, obnasanjeVrata } from './Obnasanje.js';
-import { UnlitRenderer } from './engine/renderers/UnlitRenderer.js';
+import { TN0NController } from 'engine/controllers/TN0NController.js';
+import { MihaUnlitRenderer } from './engine/renderers/MihaUnlitRenderer.js';
+import { Box } from './Box.js';
+import { quat, vec3 } from './lib/glm.js';
+import { Button } from './Button.js';
+import { Door } from './Door.js';
+import { RotatePlatform } from './RotatePlatform.js';
+import { MovingPlatform } from './MovingPlatform.js';
 
 import {
     Camera,
@@ -22,289 +27,305 @@ import {
 
 import { Renderer } from './Renderer.js';
 import { Light } from './Light.js';
-
-async function init()
-{
-    await initComponents();
-    //load bounding boxes
-    scene.traverse(node => {
-        const model = node.getComponentOfType(Model);
-        if (!model) {
-            return;
-        }
-        const boxes = model.primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
-        node.aabb = mergeAxisAlignedBoundingBoxes(boxes);
-    });
-}
-function initComponents()
-{
-    //Init tla8
-    let tla = gltfLoader.loadNode('tla');
-    tla.isGround = true;
-    tla.velocity = [0,0,0];
-    tla.addComponent(new Physics(scene, tla));
-    tla.action = obnasanjeTla;
-    let floorBin = gltfLoader.loadNode('floorBinary');
-    floorBin.isGround = true;
-    floorBin.velocity = [0,0,0];
-    floorBin.addComponent(new Physics(scene, floorBin));
-    floorBin.action = obnasanjeTla;
-    let stena01 = initStena('stena01');
-    let stena02 = initStena('stena02');
-    let stena03 = initStena('stena03');
-    let stena04 = initStena('stena04');
-    let stena05 = initStena('stena05');
-    let stena06 = initStena('stena06');
-    let stena07 = initStena('stena07');
-    let stena08 = initStena('stena08');
-    let stena09 = initStena('stena09');
-    let stena10 = initStena('stena10');
-    let stena11 = initStena('stena11');
-    let stena12 = initStena('stena12');
-    let stena13 = initStena('stena13');
-    let stena14 = initStena('stena14');
-    let stena15 = initStena('stena15');
-    let stena16 = initStena('stena16');
-    let stena17 = initStena('stena17');
-    let stena18 = initStena('stena18');
-    let stena19 = initStena('stena19');
-    let stena20 = initStena('stena20');
-    let stena21 = initStena('stena21');
-    let stena22 = initStena('stena22');
-    let stena23 = initStena('stena23');
-    let stena24 = initStena('stena24');
-    let stena25 = initStena('stena25');
-    let stena26 = initStena('stena26');
-    let stena27 = initStena('stena27');
-    let stena28 = initStena('stena28');
-    let stena29 = initStena('stena29');
-    let stena30 = initStena('stena30');
-    let stena31 = initStena('stena31');
-    let stena32 = initStena('stena32');
-    let pregrada11 = initStena('pregrada1.1');
-    let pregrada12 = initStena('pregrada1.2');
-    let pregrada13 = initStena('pregrada1.3');
-    let pregrada21 = initStena('pregrada2.1');
-    let pregrada22 = initStena('pregrada2.2');
-    let pregrada23 = initStena('pregrada2.3');
-    let pregrada31 = initStena('pregrada3.1');
-    let pregrada32 = initStena('pregrada3.2');
-    let pregrada33 = initStena('pregrada3.3');
-    let pregrada41 = initStena('pregrada4.1');
-    let pregrada42 = initStena('pregrada4.2');
-    let pregrada43 = initStena('pregrada4.3');
-    let pregrada51 = initStena('pregrada5.1');
-    let pregrada52 = initStena('pregrada5.2');
-    let pregrada53 = initStena('pregrada5.3');
-    let door1 = initStena('door1');
-
-    //Init kocke
-    let kocka1 = initKocka('kocka1');
-    let kocka2 = initKocka('kocka2');
-    let kocka3 = initKocka('kocka3');
-    let kocka4 = initKocka('kocka4');
-    let kocka5 = initKocka('kocka5');
-    let kocka6 = initKocka('kocka6');
-    let kocka7 = initKocka('kocka7');
-    let kocka8 = initKocka('kocka8');
-    let kocka9 = initKocka('kocka9');
-    let kocka10 = initKocka('kocka10');
-    let kocka11 = initKocka('kocka11');
-    let kocka12 = initKocka('kocka12');
-    let kocka13 = initKocka('kocka13');
-
-    //Init gumbi
-    let gumb1 = initGumb('gumb1');
-    let gumb2 = initGumb('gumb2');
-    let gumb3 = initGumb('gumb3');
-    let gumb4 = initGumb('gumb4');
-    let gumb5 = initGumb('gumb5');
-    let gumb6 = initGumb('gumb6');
-    let gumb7 = initGumb('gumb7');
-    let gumb8 = initGumb('gumb8');
-    let gumb9 = initGumb('gumb9');
-    let gumb10 = initGumb('gumb10');
-    let gumb11 = initGumb('gumb11');
-    let gumb12 = initGumb('gumb12');
-    let gumb13 = initGumb('gumb13');
-    let gumb14 = initGumb('gumb14');
-    let gumb15 = initGumb('gumb15');
-    let gumb16 = initGumb('gumb16');
-    let gumb17 = initGumb('gumb17');
-    let gumb18 = initGumb('gumb18');
-    let gumb19 = initGumb('gumb19');
-    let gumb20 = initGumb('gumb20');
-    let gumb21 = initGumb('gumb21');
-    let gumb22 = initGumb('gumb22');
-    let gumb23 = initGumb('gumb23');
-    let gumb24 = initGumb('gumb24');
-    let gumb25 = initGumb('gumb25');
-
-    //Init vrata
-    let vrataL1 =  initVrata('vrataL1', 'North');
-    let vrataR1 =  initVrata('vrataR1', 'South');
-    let platforma1 = initVrata('platforma1', 'West');
-    let vrataR2 =  initVrata('vrataR2', 'East');
-    let vrataL2 =  initVrata('vrataL2', 'West');
-
-
-    let platforma2 = initVrata('platforma2', 'North');
-    let vrataR3 =  initVrata('vrataR3', 'South');
-    let vrataL3 =  initVrata('vrataL3', 'North');
-
-    let vrataR4 = initVrata('vrataR4', 'North');
-    let vrataL4 = initVrata('vrataL4', 'South');
-
-    let vrataP1 = initVrata('vrataP1', 'Down');
-    let vrataP2 = initVrata('vrataP2', 'Down');
-    let vrataP3 = initVrata('vrataP3', 'Down');
-
-    let vrataL5 = initVrata('vrataL5', 'West');
-    let vrataR5 = initVrata('vrataR5', 'East');
-
-    //Binding gumbi to vrata
-    bind([gumb1], [vrataL1, vrataR1]);
-    bind([gumb2, gumb3], [platforma1]);
-    bind([gumb4, gumb5], [vrataL2, vrataR2]);
-    bind([gumb6, gumb14], [platforma2]);
-    bind([gumb8, gumb11, gumb10, gumb12], [vrataL3, vrataR3]);
-    bind([gumb15, gumb16, gumb17], [vrataL4, vrataR4]);
-    bind([gumb18], [vrataP1]);
-    bind([gumb19], [vrataP2]);
-    bind([gumb20], [vrataP3]);
-    bind([gumb21, gumb22, gumb23], [vrataL5, vrataR5]);
-}
-function initKocka(a)
-{
-    let kocka = gltfLoader.loadNode(a);
-    kocka.isDynamic = true;
-    kocka.velocity = [0, 0, 0];
-    kocka.collidingObjects = [];
-    kocka.isCube = true;
-    kocka.addComponent(new Physics(scene, kocka));
-    kocka.action = obnasanjeKocka;
-    return kocka;
-}
-function initGumb(a)
-{
-    let gumb = gltfLoader.loadNode(a);
-    gumb.velocity = [0,0,0];
-    gumb.isPushed = false;
-    gumb.collidingObjects = [];
-    gumb.addComponent(new Physics(scene, gumb, bin));
-    gumb.startPos = [...gumb.getComponentOfType(Transform).translation];
-    gumb.endPos = [gumb.startPos[0], gumb.startPos[1]-0.25, gumb.startPos[2]];
-    gumb.bindings = [];
-    gumb.action = obnasanjeGumb;
-    if(a == 'gumb24'){
-        gumb.add0 = true;
-    }else if(a == 'gumb25'){
-        gumb.add1 = true;
-    }
-    return gumb;
-}
-function initStena(a)
-{
-    let stena = gltfLoader.loadNode(a);
-    stena.isStatic = true;
-    stena.isWall = true;
-    stena.velocity = [0, 0, 0];
-    stena.addComponent(new Physics(scene, stena));
-    stena.action = obnasanjeStena;
-    return stena;
-}
-function initVrata(a, openDirection = 'Up')
-{
-    let vrata =  gltfLoader.loadNode(a);
-    let movement = 7;
-    vrata.addComponent(new Physics(scene, vrata));
-    vrata.velocity = [0,0,0];
-    vrata.isStatic = true;
-    vrata.startPos = [...vrata.getComponentOfType(Transform).translation];
-    switch (openDirection)
-    {
-        case 'Up' : vrata.endPos = [vrata.startPos[0], vrata.startPos[1] + movement, vrata.startPos[2]]; break;
-        case 'Down' : vrata.endPos = [vrata.startPos[0], vrata.startPos[1] - movement, vrata.startPos[2]]; break;
-        case 'North' : vrata.endPos = [vrata.startPos[0] + movement, vrata.startPos[1], vrata.startPos[2]]; break;
-        case 'South' : vrata.endPos = [vrata.startPos[0] - movement, vrata.startPos[1], vrata.startPos[2]]; break;
-        case 'East' : vrata.endPos = [vrata.startPos[0], vrata.startPos[1], vrata.startPos[2] + movement]; break;
-        case 'West' : vrata.endPos = [vrata.startPos[0], vrata.startPos[1], vrata.startPos[2] - movement]; break;
-    }
-    vrata.bindings = [];
-    vrata.action = obnasanjeVrata;
-    return vrata;
-}
-function bind(a = [], b = [])
-{
-    for (let i = 0; i < a.length; i++)
-        for (let j = 0; j < b.length; j++)
-        {
-            a[i].bindings.push(b[j]);
-            b[j].bindings.push(a[i]);
-        }
-}
-var dotik = false;
-var koga_premaknem = null;
-
-function update(time, dt) {
-    scene.traverse(node => {
-        for (const component of node.components) {
-            component.update?.(time, dt);
-        }
-    });
-    //const cameraPosition = camera.getComponentOfType(Transform).translation;
-    //console.log("Player position:", cameraPosition);
-    if(koga_premaknem != null){
-        bin.destroyPlatform(koga_premaknem);
-    }
-}
-
 const canvas = document.querySelector("canvas");
-//Init renderer
-const renderer = new UnlitRenderer(canvas);
+const renderer = new MihaUnlitRenderer(canvas);
 await renderer.initialize();
-
-const light = {
-    position: [15, 1, 15],  // Example position
+let light = {
+    position: [30, 1, 15],  // Example position
     ambient: [0.1, 0.1, 0.1],  // Ambient color
     diffuse: [1, 1, 1],  // Diffuse color
     specular: [1, 1, 1]  // Specular color
 };
-
-
-function render() {
-    renderer.render(scene, camera, light);
-}
-
-function resize({ displaySize: { width, height }}) {
-    camera.getComponentOfType(Camera).aspect = width / height;
-}
-
-
-
-//Init scene
 const gltfLoader = new GLTFLoader();
 await gltfLoader.load("labirint.gltf");
 
-const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
+let scene = gltfLoader.loadScene(gltfLoader.defaultScene);
+scene.physics_objects = [];
+const camera = await gltfLoader.loadNode('Camera');
 const bin = new Binary(scene, gltfLoader);
 
-const physics = new Physics(scene);
-bin.display0();
+let body;
+let player_physics;
+let render_physics;
+let player_controller;
 
-bin.getEquasion();
+async function init()
+{
+    bin.display0();
+    bin.getEquasion();
+    initPlayer();
+    initObjects();
+}
+async function initObjects()
+{
+    let respawn_point00 = await initButton('respawn00');
+    respawn_point00.respawn00 = true;
+    
+    respawn_point00.player_controller = player_controller
+    let respawn_point01 = await initButton('respawn01');
+    respawn_point01.respawn01 = true;
+    respawn_point01.player_controller = player_controller
 
-const camera = await gltfLoader.loadNode('Camera');
-camera.addComponent(new FirstPersonController(camera, document.body));
-camera.addComponent(new Physics(scene, camera));
-camera.isDynamic = true;
-camera.isPlayer = true;
-camera.velocity = camera.getComponentOfType(FirstPersonController).velocity;
-camera.action = obnasanjeCamera;
-const model = await gltfLoader.loadMesh('playerbox');
-const box = model.primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
-camera.aabb = mergeAxisAlignedBoundingBoxes(box);
 
+    let button00 = await initButton('button00');
+    let button01 = await initButton('button01');
+    let button02 = await initButton('button02');
+    let button03 = await initButton('button03');
+    let button04 = await initButton('button04');
+    let button05 = await initButton('button05');
+    let button06 = await initButton('button06');
+    let button07 = await initButton('button07');
+    let button08 = await initButton('button08');
+    let button09 = await initButton('button09');
+    let button10 = await initButton('button10');
+    let button11 = await initButton('button11');
+    let button12 = await initButton('button12');
+    let button13 = await initButton('button13');
+    let button14 = await initButton('button14');
+    let button15 = await initButton('button15');
+    let button16 = await initButton('button16');
+    let button17 = await initButton('button17');
+    let button18 = await initButton('button18');
+    let button19 = await initButton('button19');
+    let button20 = await initButton('button20');
+    let button21 = await initButton('button21');
+    let button22 = await initButton('button22');
+    let gumb24 = await initButton('gumb24');
+
+    gumb24.add0 = true;
+    gumb24.bin = bin;
+    let gumb25 = await initButton('gumb25');
+    gumb25.add1 = true;
+    gumb25.bin = bin;
+
+    initDoor('door00', 'left', 40, [button00]);
+    initDoor('door01', 'up', 10, [button01]);
+    initDoor('door02', 'up', 10, [button02, button03, button04, button05]);
+    initDoor('door03', 'up', 40, [button06, button07, button08]);
+    initDoor('door04', 'right', 3, [button09, button10]);
+    initDoor('door05', 'up', 10, [button11]);
+    initDoor('door06', 'up', 10, [button12, button13]);
+    initDoor('door07', 'right', 3, [button14, button15]);
+    initDoor('door08', 'forward', 3, [button16]);
+    initDoor('door09', 'forward', 3, [button16, button17]);
+    initDoor('door10', 'forward', 3, [button16, button17, button18]);
+    initDoor('door11', 'up', 10, [button16, button17, button18]);
+    initDoor('door12', 'up', 20, [button22], {door_speed: 2});
+    initBox('box00');
+    initBox('box01');
+    initBox('box02');
+    initBox('box03');
+    initBox('box04');
+    initBox('box05');
+    initBox('box06');
+    initBox('box07');
+    initBox('box08');
+    initBox('box09');
+    initBox('box10');
+    initBox('box11');
+    initBox('box12');
+    initBox('box13');
+    initRotatingPlatform('platform00', 0.26,'z');
+    initRotatingPlatform('platform01', 0.25, 'z');
+    initRotatingPlatform('platform02', 0.23,'y');
+    initRotatingPlatform('platform03', 0.24,'y');
+    initRotatingPlatform('platform04', 0.25,'y');
+    initRotatingPlatform('platform05', 0.26,'y');
+    initRotatingPlatform('platform06', 0.27,'y');
+
+    initMovingPlatform('platform07', 'forward', 50, 9);
+    initMovingPlatform('platform08', 'forward', 50, 11);
+    initMovingPlatform('platform09', 'forward', 50, 7);
+    initMovingPlatform('platform10', 'forward', 50, 8);
+    initMovingPlatform('platform11', 'forward', 50, 5);
+    initMovingPlatform('platform12', 'forward', 50, 12);
+    initMovingPlatform('platform13', 'forward', 50, 9);
+    initMovingPlatform('platform14', 'forward', 50, 12);
+    initMovingPlatform('platform15', 'forward', 50, 10);
+    initMovingPlatform('platform16', 'forward', 50, 13);
+
+    initStatic('tla00');
+    initStatic('tla01');
+    initStatic('tla02');
+    initStatic('tla03');
+    initStatic('tla04');
+    initStatic('tla05');
+    initStatic('tla06');
+    initStatic('tla07');
+    initStatic('tla08');
+    initStatic('tla09');
+    initStatic('tla10');
+    initStatic('tla11');
+    initStatic('tla12');
+    initStatic('tla13');
+    initStatic('tla14');
+    initStatic('tla15');
+    initStatic('tla16');
+    initStatic('tla17');
+    initStatic('tla18');
+    initStatic('tla19');
+    initStatic('tla20');
+    initStatic('tla21');
+    initStatic('tla22');
+    initStatic('tla23');
+    initStatic('tla24');
+    initStatic('tla25');
+    initStatic('tla26');
+    initStatic('tla27');
+    initStatic('tla28');
+    initStatic('tla29');
+    initStatic('tla30');
+    initStatic('tla31');
+    initStatic('tla33');
+    initStatic('tla34');
+    initStatic('tla35');
+    initStatic('tla36');
+    initStatic('tla37');
+    initStatic('wall00');
+    initStatic('wall01');
+    initStatic('wall02');
+    initStatic('wall03');
+    initStatic('wall04');
+    initStatic('wall05');
+    initStatic('wall06');
+    initStatic('wall07');
+    initStatic('wall08');
+    initStatic('wall09');
+    initStatic('wall10');
+    initStatic('wall11');
+    initStatic('wall12');
+    initStatic('wall13');
+    initStatic('wall14');
+    initStatic('wall15');
+    initStatic('wall16');
+    initStatic('wall17');
+    initStatic('wall18');
+    initStatic('wall19');
+    initStatic('wall20');
+    initStatic('wall21');
+    initStatic('wall22');
+    initStatic('wall23');
+    initStatic('wall24');
+    initStatic('wall25');
+    initStatic('wall26');
+    initStatic('wall27');
+    initStatic('wall28');
+    initStatic('wall29');
+    initStatic('wall30');
+    initStatic('wall31');
+    initStatic('wall32');
+    initStatic('wall33');
+    initStatic('wall34');
+    initStatic('wall35');
+    initStatic('wall36');
+    initStatic('wall37');
+    initStatic('wall38');
+}
+async function initMovingPlatform(name, direction, amount, speed) {
+    const platform = await gltfLoader.loadNode(name);
+    const platformComponent = new MovingPlatform(platform, direction, amount, document.body, {speed});
+    const boxes = platform.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    platform.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    platformComponent.static = true;
+    const platform_physics = new Physics(scene, platformComponent, platform, null);
+    scene.addComponent(platformComponent);
+    scene.addComponent(platform_physics);
+}
+async function initDoor(name, direction, amount, buttons) {
+    const door = await gltfLoader.loadNode(name);
+    const doorComponent = new Door(door, direction, amount, buttons, document.body);
+    const boxes = door.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    door.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    doorComponent.static = true;
+    const door_physics = new Physics(scene, doorComponent, door, null);
+    scene.addComponent(doorComponent);
+    scene.addComponent(door_physics);
+}
+async function initButton(name) {
+    const button = await gltfLoader.loadNode(name);
+    const buttonComponent = new Button(button, document.body);
+    const boxes = button.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    button.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    const button_physics = new Physics(scene, buttonComponent, button, null);
+    scene.addComponent(buttonComponent);
+    scene.addComponent(button_physics);
+
+    return buttonComponent;
+}
+async function initRotatingPlatform(name, speed, axis){
+    const platform = await gltfLoader.loadNode(name);
+    const platformComponent = new RotatePlatform(platform, speed, axis, document.body);
+    scene.addComponent(platformComponent);
+}
+async function initStatic(name)
+{
+    const staticObject = await gltfLoader.loadNode(name);
+    const boxes = staticObject.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    staticObject.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    staticObject.static = true;
+    scene.addComponent(new Physics(scene, staticObject, staticObject, null));
+}
+async function initBox(name)
+{
+    const box = await gltfLoader.loadNode(name);
+    const boxComponent = new Box(box, document.body);
+    const boxes = box.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    box.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    boxComponent.gravity = true;
+    box.box = true;
+    const box_physics = new Physics(scene, boxComponent, box, null);
+    scene.addComponent(boxComponent);
+    scene.addComponent(box_physics);
+    
+}
+async function initPlayer(){
+    const head =  await gltfLoader.loadNode('head');
+    body =    await gltfLoader.loadNode('body');
+    player_controller = new TN0NController(head, body, document.body);
+    const boxes = body.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    body.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+    player_controller.gravity = true;
+    player_controller.player = true;
+    player_controller.death_point = (await gltfLoader.loadNode('void')).getComponentOfType(Transform).translation[1];
+    player_physics = new Physics(scene, player_controller, body, null);
+
+
+    render_physics = await gltfLoader.loadNode('render_physics');
+    const boxes2 = render_physics.getComponentOfType(Model).primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    render_physics.aabb = mergeAxisAlignedBoundingBoxes(boxes2);
+
+    scene.body = body;
+    scene.addComponent(player_controller);
+    scene.addComponent(player_physics);
+}
+function update(time, dt) {
+    scene.physics_objects = [player_physics];
+
+    scene.traverse(node => {
+        for (const component of node.components) {
+            if (component instanceof Door || component instanceof RotatePlatform || component instanceof MovingPlatform){
+                component.update?.(time, dt);
+            }
+            if ((component instanceof Physics) && aabbIntersection(getTransformedAABB(component.hitbox), getTransformedAABB(render_physics))){
+                if (!(component.node instanceof Door || component.node instanceof RotatePlatform || component.node instanceof MovingPlatform)){
+                    component.node.update?.(time, dt);
+                }
+                scene.physics_objects.push(component);
+            }
+        }
+    });
+
+    for (let a of scene.physics_objects) {
+            a.update?.(time, dt);
+    }
+
+}
+function render() {
+    renderer.render(scene, camera, light);
+}
+function resize({ displaySize: { width, height }}) {
+    camera.getComponentOfType(Camera).aspect = width / height;
+}
 
 await init();
 new ResizeSystem({ canvas, resize }).start();

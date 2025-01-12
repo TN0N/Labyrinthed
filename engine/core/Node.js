@@ -65,5 +65,8 @@ export class Node {
     getComponentsOfType(type) {
         return this.components.filter(component => component instanceof type);
     }
-
+    collisionBehaviour()
+    {
+        
+    }
 }

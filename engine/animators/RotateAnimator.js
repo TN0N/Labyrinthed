@@ -47,7 +47,6 @@ export class RotateAnimator {
         if (!transform) {
             return;
         }
-
         quat.slerp(transform.rotation, this.startRotation, this.endRotation, interpolation);
     }
 

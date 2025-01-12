@@ -44,6 +44,10 @@ export function getModels(node) {
 export function getTransformedAABB(node) {
     // Transform all vertices of the AABB from local to global space.
     const matrix = getGlobalModelMatrix(node);
+    if (node.aabb == null)
+        return;
+
+    // Apply the transformation to the AABB vertices.
     const { min, max } = node.aabb;
     const vertices = [
         [min[0], min[1], min[2]],
@@ -55,7 +59,6 @@ export function getTransformedAABB(node) {
         [max[0], max[1], min[2]],
         [max[0], max[1], max[2]],
     ].map(v => vec3.transformMat4(v, v, matrix));
-
     // Find new min and max by component.
     const xs = vertices.map(v => v[0]);
     const ys = vertices.map(v => v[1]);
@@ -73,4 +76,16 @@ export function aabbIntersection(aabb1, aabb2) {
     return intervalIntersection(aabb1.min[0], aabb1.max[0], aabb2.min[0], aabb2.max[0])
         && intervalIntersection(aabb1.min[1], aabb1.max[1], aabb2.min[1], aabb2.max[1])
         && intervalIntersection(aabb1.min[2], aabb1.max[2], aabb2.min[2], aabb2.max[2]);
+}
+
+export function calculatePenetration(aabb1, aabb2)
+{
+    const min1 = aabb1.min;
+    const min2 = aabb2.min;
+    const max1 = aabb1.max;
+    const max2 = aabb2.max;
+    const penetration_x = Math.min(max1[0] - min2[0], max2[0] - min1[0])
+    const penetration_y = Math.min(max1[1] - min2[1], max2[1] - min1[1])
+    const penetration_z = Math.min(max1[2] - min2[2], max2[2] - min1[2])
+    return [penetration_x, penetration_y, penetration_z]
 }
