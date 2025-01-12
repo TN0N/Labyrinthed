@@ -101,7 +101,7 @@ async function initObjects()
     initDoor('door00', 'left', 40, [button00]);
     initDoor('door01', 'up', 10, [button01]);
     initDoor('door02', 'up', 10, [button02, button03, button04, button05]);
-    initDoor('door03', 'up', 40, [button06, button07, button08]);
+    initDoor('door03', 'up', 10, [button06, button07, button08]);
     initDoor('door04', 'right', 3, [button09, button10]);
     initDoor('door05', 'up', 10, [button11]);
     initDoor('door06', 'up', 10, [button12, button13]);
