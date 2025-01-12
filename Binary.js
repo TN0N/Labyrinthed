@@ -115,6 +115,7 @@ export class Binary {
         }
     }
     openDoor(){
+        this.loader.loadNode('wall38').static = false;
         this.scene.removeChild(this.loader.loadNode('wall38'));
         this.scene.removeChild(this.loader.loadNode('doorT1'));
     }
