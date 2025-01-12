@@ -31,7 +31,7 @@ const canvas = document.querySelector("canvas");
 const renderer = new MihaUnlitRenderer(canvas);
 await renderer.initialize();
 let light = {
-    position: [30, 1, 15],  // Example position
+    position: [30, 30, 15],  // Example position
     ambient: [0.1, 0.1, 0.1],  // Ambient color
     diffuse: [1, 1, 1],  // Diffuse color
     specular: [1, 1, 1]  // Specular color
